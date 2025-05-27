@@ -4,7 +4,7 @@ package com.mycompany.dnsproject;
 import java.net.*;
 
 public class DnsServer {
-    public static final int PORT = 8053;
+    public static final int PORT = 53;
 
     public static void main(String[] args) {
         try (DatagramSocket serverSocket = new DatagramSocket(PORT)) {

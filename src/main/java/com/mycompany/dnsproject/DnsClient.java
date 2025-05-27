@@ -1,39 +1,46 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.dnsproject;
 
-/**
- *
- * @author Admin
- */
-import java.net.*;
 import java.io.*;
+import java.net.*;
+import java.util.UUID;
 
 public class DnsClient {
     public static void main(String[] args) {
         try (DatagramSocket socket = new DatagramSocket()) {
             InetAddress serverAddress = InetAddress.getByName("localhost");
-            int serverPort = 8053;
+            int serverPort = 53;
 
-            // Test A query
-            sendQuery(socket, serverAddress, serverPort, "A example.com");
+            while (true) {
+                // Test A query
+                sendQuery(socket, serverAddress, serverPort, "A example.com");
+                sendQuery(socket, serverAddress, serverPort, "A uia.org");
 
-            // Test REGISTER query
-            sendQuery(socket, serverAddress, serverPort, "REGISTER nhaccuatui.com");
+                // Test REGISTER query for existing domains
+                sendQuery(socket, serverAddress, serverPort, "REGISTER example.com");
+                sendQuery(socket, serverAddress, serverPort, "REGISTER crypto.com");
 
-            // Test PTR query
-            sendQuery(socket, serverAddress, serverPort, "PTR 192.168.1.10");
+                // Test REGISTER for new computers joining
+                String newClientDomain1 = "client-" + UUID.randomUUID().toString().substring(0, 8) + ".local";
+                String newClientDomain2 = "client-" + UUID.randomUUID().toString().substring(0, 8) + ".local";
+                sendQuery(socket, serverAddress, serverPort, "REGISTER " + newClientDomain1);
+                sendQuery(socket, serverAddress, serverPort, "REGISTER " + newClientDomain2);
 
-            // Test ZONE query
-            sendQuery(socket, serverAddress, serverPort, "ZONE request");
-            
-            // Test MX
-            sendQuery(socket, serverAddress, serverPort, "MX wannacry.local");
+                // Test PTR query
+                sendQuery(socket, serverAddress, serverPort, "PTR 192.168.1.10");
 
+                // Test ZONE query
+                sendQuery(socket, serverAddress, serverPort, "ZONE request");
+
+                // Test MX query
+                sendQuery(socket, serverAddress, serverPort, "MX client1.local");
+
+                // Test CACHE query
+                sendQuery(socket, serverAddress, serverPort, "CACHE request");
+
+                Thread.sleep(60000);
+            }
         } catch (Exception e) {
-            System.err.println("Client error: " + e.getMessage());
+            Logger.log("ERROR", "Client error: " + e.getMessage());
         }
     }
 
@@ -47,6 +54,6 @@ public class DnsClient {
         socket.receive(response);
 
         String responseStr = new String(response.getData(), 0, response.getLength());
-        System.out.println("Query: " + query + " -> Response: " + responseStr);
+        Logger.log("INFO", "Query: " + query + " -> Response: " + responseStr);
     }
 }

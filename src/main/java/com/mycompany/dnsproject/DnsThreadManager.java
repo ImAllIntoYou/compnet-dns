@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.dnsproject;
 
-/**
- *
- * @author Admin
- */
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -30,14 +22,14 @@ public class DnsThreadManager {
                 byte[] buffer = new byte[512];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
-                System.out.println("New client packet from: " + packet.getAddress());
+                Logger.log("INFO", "New client packet from: " + packet.getSocketAddress());
 
                 ClientHandler handler = new ClientHandler(socket, packet, db);
                 Thread thread = new Thread(handler);
                 thread.start();
             }
         } catch (IOException e) {
-            System.err.println("Thread manager error: " + e.getMessage());
+            Logger.log("ERROR", "Thread manager error: " + e.getMessage());
         }
     }
 
@@ -56,13 +48,13 @@ public class DnsThreadManager {
                     for (String domain : expired) {
                         DnsDatabase.DnsEntry entry = db.getMappings().remove(domain);
                         db.getIpPool().add(entry.ip);
-                        System.out.println("Expired mapping: " + domain + " -> " + entry.ip);
+                        Logger.log("INFO", "Expired mapping: " + domain + " -> " + entry.ip);
                     }
                     if (!expired.isEmpty()) {
                         rewriteFile();
                     }
                 } catch (InterruptedException e) {
-                    System.err.println("Expiry thread interrupted: " + e.getMessage());
+                    Logger.log("ERROR", "Expiry thread interrupted: " + e.getMessage());
                 }
             }
         }).start();
@@ -71,12 +63,13 @@ public class DnsThreadManager {
     private void rewriteFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("dns_mappings.txt"))) {
             for (DnsDatabase.DnsEntry entry : db.getMappings().values()) {
-                writer.write(entry.domain + "," + entry.ip);
+                String timestampStr = Logger.sdf.format(new Date(entry.timestamp));
+                writer.write(entry.domain + "," + entry.ip + "," + timestampStr);
                 writer.newLine();
             }
-            System.out.println("Rewrote dns_mappings.txt after expiry");
+            Logger.log("INFO", "Rewrote dns_mappings.txt after expiry");
         } catch (IOException e) {
-            System.err.println("Error rewriting mappings: " + e.getMessage());
+            Logger.log("ERROR", "Error rewriting mappings: " + e.getMessage());
         }
     }
 }
